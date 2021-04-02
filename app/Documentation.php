@@ -32,6 +32,8 @@ class Documentation
     {
         $this->files = $files;
         $this->cache = $cache;
+        $this->lang=app()->getLocale();
+        $this->doc=config('xra.doc');
     }
 
     /**
@@ -42,8 +44,10 @@ class Documentation
      */
     public function getIndex($version)
     {
-        return $this->cache->remember('docs.'.$version.'.index', 5, function () use ($version) {
-            $path = base_path('resources/docs/'.$version.'/documentation.md');
+
+        $cache_key=$this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'1';
+        return $this->cache->remember($cache_key, 5, function () use ($version) {
+            $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/documentation.md');
 
             if ($this->files->exists($path)) {
                 return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
@@ -62,8 +66,10 @@ class Documentation
      */
     public function get($version, $page)
     {
-        return $this->cache->remember('docs.'.$version.'.'.$page, 5, function () use ($version, $page) {
-            $path = base_path('resources/docs/'.$version.'/'.$page.'.md');
+
+        $cache_key=$this->doc.'.'.$this->lang.'.docs.'.$version.'.index';
+        return $this->cache->remember($cache_key, 5, function () use ($version, $page) {
+            $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md');
 
             if ($this->files->exists($path)) {
                 return $this->replaceLinks($version, (new Parsedown)->text($this->files->get($path)));
@@ -82,7 +88,10 @@ class Documentation
      */
     public static function replaceLinks($version, $content)
     {
-        return str_replace('{{version}}', $version, $content);
+        $lang=app()->getLocale();
+        $content=str_replace('{{version}}', $version, $content);
+        $content=str_replace('{{lang}}', $lang, $content);
+        return $content;
     }
 
     /**
@@ -94,8 +103,9 @@ class Documentation
      */
     public function sectionExists($version, $page)
     {
+
         return $this->files->exists(
-            base_path('resources/docs/'.$version.'/'.$page.'.md')
+            base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md')
         );
     }
 
