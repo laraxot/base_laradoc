@@ -16,16 +16,16 @@
     - [Laravel The API Backend](#laravel-the-api-backend)
 
 <a name="meet-laravel"></a>
-## Meet Laravel
+## Conosciamo Laravel
 
-Laravel is a web application framework with expressive, elegant syntax. A web framework provides a structure and starting point for creating your application, allowing you to focus on creating something amazing while we sweat the details.
+Laravel è un framework con una sintassi elegante e significativa. Un web framework che fornisce una struttura di partenza per creare le tue applicazioni, permettendoti di concentrarti sulla creazione di qualcosa di straordinario mentre ci occupiamo dei dettagli.
 
-Laravel strives to provide an amazing developer experience, while providing powerful features such as thorough dependency injection, an expressive database abstraction layer, queues and scheduled jobs, unit and integration testing, and more.
+Laravel si impegna a fornire un'esperienza straordinaria per gli sviluppatori, fornendo al contempo potenti funzionalità come l'inserimento completo delle dipendenze, un livello di astrazione del database espressivo, code e lavori pianificati, test di unità e integrazione e altro ancora.
 
-Whether you are new to PHP or web frameworks or have years of experience, Laravel is a framework that can grow with you. We'll help you take your first steps as a web developer or give you a boost as you take your expertise to the next level. We can't wait to see what you build.
+Che tu sia neofita di PHP o dei framework web o che tu abbia anni di esperienza, Laravel è un framework che può crescere con te. Ti aiuteremo a muovere i primi passi come sviluppatore web o ti daremo una aiuto mentre porti la tua esperienza al livello successivo. Non vediamo l'ora di vedere cosa costruirai.
 
 <a name="why-laravel"></a>
-### Why Laravel?
+### Perché Laravel?
 
 There are a variety of tools and frameworks available to you when building a web application. However, we believe Laravel is the best choice for building modern, full-stack web applications.
 

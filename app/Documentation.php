@@ -43,17 +43,19 @@ class Documentation
      */
     public function getIndex($version)
     {
-        $cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'2';
+        //$cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'2';
+        $cache_key = $this->doc.'.'.app()->getLocale().'.docs.'.$version.'.index';
 
-        //return $this->cache->remember($cache_key, 5, function () use ($version) {
-        $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/documentation.md');
+        return $this->cache->remember($cache_key, 5, function () use ($version) {
+            //$path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/documentation.md');
+            $path = base_path('resources/docs/'.$this->doc.'/'.app()->getLocale().'/'.$version.'/documentation.md');
+            
+            if ($this->files->exists($path)) {
+                return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
+            }
 
-        if ($this->files->exists($path)) {
-            return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
-        }
-
-        return null;
-        //});
+            return null;
+        });
     }
 
     /**
@@ -66,17 +68,19 @@ class Documentation
      */
     public function get($version, $page)
     {
-        $cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'1';
+        //$cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'1';
+        $cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index';
 
-        //return $this->cache->remember($cache_key, 5, function () use ($version, $page) {
-        $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md');
+        return $this->cache->remember($cache_key, 5, function () use ($version, $page) {
+            //$path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md');
+            $path = base_path('resources/docs/'.$this->doc.'/'.app()->getLocale().'/'.$version.'/'.$page.'.md');
 
         if ($this->files->exists($path)) {
-            return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
-        }
+                return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
+            }
 
-        return null;
-        //});
+            return null;
+        });
     }
 
     /**
