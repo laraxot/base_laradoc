@@ -2,8 +2,9 @@
 
 namespace Modules\Tenant\Providers;
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Route;
+use Modules\Tenant\Http\Middleware\SetDefaultLocaleForUrlsMiddleware;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -24,6 +25,8 @@ class RouteServiceProvider extends ServiceProvider
     public function boot()
     {
         parent::boot();
+        $router = $this->app['router'];
+        $router->prependMiddlewareToGroup('web', SetDefaultLocaleForUrlsMiddleware::class);
     }
 
     /**

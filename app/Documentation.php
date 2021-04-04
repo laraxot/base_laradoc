@@ -2,8 +2,8 @@
 
 namespace App;
 
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Filesystem\Filesystem;
 
 class Documentation
 {
@@ -24,86 +24,88 @@ class Documentation
     /**
      * Create a new documentation instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  \Illuminate\Contracts\Cache\Repository  $cache
      * @return void
      */
     public function __construct(Filesystem $files, Cache $cache)
     {
         $this->files = $files;
         $this->cache = $cache;
-        $this->lang=app()->getLocale();
-        $this->doc=config('xra.doc');
+        $this->lang = app()->getLocale();
+        $this->doc = config('xra.doc');
     }
 
     /**
      * Get the documentation index page.
      *
-     * @param  string  $version
+     * @param string $version
+     *
      * @return string|null
      */
     public function getIndex($version)
     {
+        $cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'2';
 
-        $cache_key=$this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'1';
-        return $this->cache->remember($cache_key, 5, function () use ($version) {
-            $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/documentation.md');
+        //return $this->cache->remember($cache_key, 5, function () use ($version) {
+        $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/documentation.md');
 
-            if ($this->files->exists($path)) {
-                return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
-            }
+        if ($this->files->exists($path)) {
+            return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
+        }
 
-            return null;
-        });
+        return null;
+        //});
     }
 
     /**
      * Get the given documentation page.
      *
-     * @param  string  $version
-     * @param  string  $page
+     * @param string $version
+     * @param string $page
+     *
      * @return string|null
      */
     public function get($version, $page)
     {
+        $cache_key = $this->doc.'.'.$this->lang.'.docs.'.$version.'.index'.'1';
 
-        $cache_key=$this->doc.'.'.$this->lang.'.docs.'.$version.'.index';
-        return $this->cache->remember($cache_key, 5, function () use ($version, $page) {
-            $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md');
+        //return $this->cache->remember($cache_key, 5, function () use ($version, $page) {
+        $path = base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md');
 
-            if ($this->files->exists($path)) {
-                return $this->replaceLinks($version, (new Parsedown)->text($this->files->get($path)));
-            }
+        if ($this->files->exists($path)) {
+            return $this->replaceLinks($version, (new Parsedown())->text($this->files->get($path)));
+        }
 
-            return null;
-        });
+        return null;
+        //});
     }
 
     /**
      * Replace the version place-holder in links.
      *
-     * @param  string  $version
-     * @param  string  $content
+     * @param string $version
+     * @param string $content
+     *
      * @return string
      */
     public static function replaceLinks($version, $content)
     {
-        $lang=app()->getLocale();
-        $content=str_replace('{{version}}', $version, $content);
-        $content=str_replace('{{lang}}', $lang, $content);
+        $lang = app()->getLocale();
+        $content = str_replace('{{version}}', $version, $content);
+        $content = str_replace('{{lang}}', $lang, $content);
+
         return $content;
     }
 
     /**
      * Check if the given section exists.
      *
-     * @param  string  $version
-     * @param  string  $page
+     * @param string $version
+     * @param string $page
+     *
      * @return boolean
      */
     public function sectionExists($version, $page)
     {
-
         return $this->files->exists(
             base_path('resources/docs/'.$this->doc.'/'.$this->lang.'/'.$version.'/'.$page.'.md')
         );
@@ -112,7 +114,8 @@ class Documentation
     /**
      * Determine which versions a page exists in.
      *
-     * @param  string  $page
+     * @param string $page
+     *
      * @return \Illuminate\Support\Collection
      */
     public function versionsContainingPage($page)
@@ -124,7 +127,7 @@ class Documentation
     }
 
     /**
-     * Get the publicly available versions of the documentation
+     * Get the publicly available versions of the documentation.
      *
      * @return array
      */
