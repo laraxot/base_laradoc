@@ -34,6 +34,10 @@ class Documentation
         $this->doc = config('xra.doc');
     }
 
+    public function setLang($lang){
+        $this->lang = $lang; 
+    }
+
     /**
      * Get the documentation index page.
      *

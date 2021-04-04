@@ -1,17 +1,17 @@
 # Installazione
 
-- [Meet Laravel](#meet-laravel)
-    - [Why Laravel?](#why-laravel)
-- [Your First Laravel Project](#your-first-laravel-project)
-    - [Getting Started On macOS](#getting-started-on-macos)
-    - [Getting Started On Windows](#getting-started-on-windows)
-    - [Getting Started On Linux](#getting-started-on-linux)
-    - [Choosing Your Sail Services](#choosing-your-sail-services)
+- [Conosciamo Laravel](#meet-laravel)
+    - [Perchè Laravel?](#why-laravel)
+- [Il tuo primo progetto in Laravel](#your-first-laravel-project)
+    - [Guida introduttiva su macOS](#getting-started-on-macos)
+    - [Guida introduttiva su Windows](#getting-started-on-windows)
+    - [Guida introduttiva su Linux](#getting-started-on-linux)
+    - [Scegliere i tuoi Servizi Sail](#choosing-your-sail-services)
     - [Installazione Via Composer](#Installazione-via-composer)
-- [Initial Configuration](#initial-configuration)
-    - [Environment Based Configuration](#environment-based-configuration)
-    - [Directory Configuration](#directory-configuration)
-- [Next Steps](#next-steps)
+- [Configurazioni Iniziali](#initial-configuration)
+    - [Configurazione basata sull'ambiente](#environment-based-configuration)
+    - [Configurazione delle Directory](#directory-configuration)
+- [Prossimi Passi](#next-steps)
     - [Laravel The Full Stack Framework](#laravel-the-fullstack-framework)
     - [Laravel The API Backend](#laravel-the-api-backend)
 
@@ -27,26 +27,26 @@ Che tu sia neofita di PHP o dei framework web o che tu abbia anni di esperienza,
 <a name="why-laravel"></a>
 ### Perché Laravel?
 
-There are a variety of tools and frameworks available to you when building a web application. However, we believe Laravel is the best choice for building modern, full-stack web applications.
+Quando si crea un'applicazione web, sono disponibili numerosi strumenti e framework. Tuttavia, riteniamo che Laravel sia la scelta migliore per la creazione di applicazioni web moderne e full-stack.
 
-#### A Progressive Framework
+#### Un Framework Progressista
 
-We like to call Laravel a "progressive" framework. By that, we mean that Laravel grows with you. If you're just taking your first steps into web development, Laravel's vast library of documentation, guides, and [video tutorials](https://laracasts.com) will help you learn the ropes without becoming overwhelmed.
+Ci piace chiamare Laravel un framework "progressista". Con questo, intendiamo che Laravel cresce con te. Se stai solo muovendo i primi passi nello sviluppo web, la vasta libreria di documentazione, guide e [tutorial video] di Laravel (https://laracasts.com) ti aiuterà a imparare le basi senza essere sopraffatto.
 
-If you're a senior developer, Laravel gives you robust tools for [dependency injection](/docs/{{version}}/container), [unit testing](/docs/{{version}}/testing), [queues](/docs/{{version}}/queues), [real-time events](/docs/{{version}}/broadcasting), and more. Laravel is fine-tuned for building professional web applications and ready to handle enterprise work loads.
+Se sei uno sviluppatore senior, Laravel ti offre strumenti affidabili per [iniezione delle dipendenze](/docs/{{version}}/container), [unit testing](/docs/{{version}}/testing), [queues](/docs/{{version}}/queues), [real-time events](/docs/{{version}}/broadcasting) e altro ancora. Laravel è ottimizzato per la creazione di applicazioni Web professionali e pronto per gestire carichi di lavoro aziendali.
 
-#### A Scalable Framework
+#### Un Framework Scalabile
 
-Laravel is incredibly scalable. Thanks to the scaling-friendly nature of PHP and Laravel's built-in support for fast, distributed cache systems like Redis, horizontal scaling with Laravel is a breeze. In fact, Laravel applications have been easily scaled to handle hundreds of millions of requests per month.
+Laravel è incredibilmente scalabile. Grazie alla natura adatta al ridimensionamento di PHP e al supporto integrato di Laravel per sistemi di cache distribuiti e veloci come Redis, il ridimensionamento orizzontale con Laravel è un gioco da ragazzi. In effetti, le applicazioni Laravel sono state facilmente ridimensionate per gestire centinaia di milioni di richieste al mese.
 
-Need extreme scaling? Platforms like [Laravel Vapor](https://vapor.laravel.com) allow you to run your Laravel application at nearly limitless scale on AWS's latest serverless technology.
+Hai bisogno di un ridimensionamento estremo? Piattaforme come [Laravel Vapor](https://vapor.laravel.com) ti consentono di eseguire la tua applicazione Laravel su scala quasi illimitata sulla più recente tecnologia serverless di AWS.
 
-#### A Community Framework
+#### Un Framework Comunitario
 
-Laravel combines the best packages in the PHP ecosystem to offer the most robust and developer friendly framework available. In addition, thousands of talented developers from around the world have [contributed to the framework](https://github.com/laravel/framework). Who knows, maybe you'll even become a Laravel contributor.
+Laravel combina i migliori pacchetti nell'ecosistema PHP per offrire il framework più robusto e intuitivo per gli sviluppatori disponibile. Inoltre, migliaia di sviluppatori di talento da tutto il mondo hanno [contribuito al framework](https://github.com/laravel/framework). Chissà, forse diventerai anche un collaboratore di Laravel.
 
 <a name="your-first-laravel-project"></a>
-## Your First Laravel Project
+## Il tuo primo progetto in Laravel
 
 We want it to be as easy as possible to get started with Laravel. There are a variety of options for developing and running a Laravel project on your own computer. While you may wish to explore these options at a later time, Laravel provides [Sail](/docs/{{version}}/sail), a built-in solution for running your Laravel project using [Docker](https://www.docker.com).
 

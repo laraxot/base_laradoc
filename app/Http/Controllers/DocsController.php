@@ -58,9 +58,10 @@ class DocsController extends Controller
         }
 
         $sectionPage = $page ?: 'installation';
-        $content = $this->docs->get($version, $sectionPage);
-        //dd('aa');
 
+        //$this->docs->setLang($lang);
+
+        $content = $this->docs->get($version, $sectionPage);
 
         if (is_null($content)) {
             $otherVersions = $this->docs->versionsContainingPage($page);
