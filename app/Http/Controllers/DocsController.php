@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Documentation;
 use Symfony\Component\DomCrawler\Crawler;
 
-class DocsController extends Controller
-{
+class DocsController extends Controller {
     /**
      * The documentation repository.
      *
@@ -21,9 +20,18 @@ class DocsController extends Controller
      *
      * @return void
      */
-    public function __construct(Documentation $docs)
-    {
+    public function __construct(Documentation $docs) {
         $this->docs = $docs;
+    }
+
+    public function setLang(string $lang) {
+        app()->setLocale($lang);
+        $this->lang = $lang;
+        $this->docs->setLang($lang);
+    }
+
+    public function getLang() {
+        return $this->lang;
     }
 
     /**
@@ -31,9 +39,8 @@ class DocsController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function showRootPage()
-    {
-        $lang = app()->getLocale();
+    public function showRootPage($lang) {
+        $this->setLang($lang);
 
         return redirect($lang.'/docs/'.DEFAULT_VERSION);
     }
@@ -46,14 +53,14 @@ class DocsController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function show($lang, $version, $page = null)
-    {
-        app()->setLocale($lang);
-        if (!$this->isVersion($version)) {
+    public function show($lang, $version, $page = null) {
+        $this->setLang($lang);
+
+        if (! $this->isVersion($version)) {
             return redirect($lang.'/docs/'.DEFAULT_VERSION.'/'.$version, 301);
         }
 
-        if (!defined('CURRENT_VERSION')) {
+        if (! defined('CURRENT_VERSION')) {
             define('CURRENT_VERSION', $version);
         }
 
@@ -87,7 +94,7 @@ class DocsController extends Controller
 
         if ($this->docs->sectionExists($version, $page)) {
             $section .= '/'.$page;
-        } elseif (!is_null($page)) {
+        } elseif (! is_null($page)) {
             return redirect('/'.$lang.'/docs/'.$version);
         }
 
@@ -116,8 +123,7 @@ class DocsController extends Controller
      *
      * @return bool
      */
-    protected function isVersion($version)
-    {
+    protected function isVersion($version) {
         return array_key_exists($version, Documentation::getDocVersions());
     }
 }

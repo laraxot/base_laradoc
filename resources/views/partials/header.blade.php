@@ -10,7 +10,7 @@
                 <img class="hidden ml-5 sm:block" src="/img/logotype.min.svg" alt="Laravel">
             </a>
             <ul class="relative hidden lg:ml-6 lg:pt-3 lg:flex lg:items-end lg:space-x-6 xl:ml-14 xl:space-x-10">
-                <li><a href="/docs">Documentation</a></li>
+                <li><a href="/{{ $lang }}/docs">Documentation</a></li>
                 @if (SHOW_VAPOR)
                     <li><a href="https://vapor.laravel.com">Vapor</a></li>
                 @else
@@ -289,7 +289,7 @@
         >
             <div class="relative py-8 px-8 bg-white">
                 <ul>
-                    <li><a class="block w-full py-2 text-center" href="/docs">Documentation</a></li>
+                    <li><a class="block w-full py-2 text-center" href="{{ route('docs.index') }}">Documentation [ {{ $lang }} ]</a></li>
                     @if (SHOW_VAPOR)
                         <li><a class="block w-full py-2 text-center" href="https://vapor.laravel.com">Vapor</a></li>
                     @else
