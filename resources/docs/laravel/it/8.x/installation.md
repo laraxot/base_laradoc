@@ -31,7 +31,7 @@ Quando si crea un'applicazione web, sono disponibili numerosi strumenti e framew
 
 #### Un Framework Progressista
 
-Ci piace chiamare Laravel un framework "progressista". Con questo, intendiamo che Laravel cresce con te. Se stai solo muovendo i primi passi nello sviluppo web, la vasta libreria di documentazione, guide e [tutorial video] di Laravel (https://laracasts.com) ti aiuterà a imparare le basi senza essere sopraffatto.
+Ci piace chiamare Laravel un framework "progressivo/graduale". Con questo, intendiamo che Laravel cresce con te. Se stai solo muovendo i primi passi nello sviluppo web, la vasta libreria di documentazione, guide e [tutorial video] di Laravel (https://laracasts.com) ti aiuterà a imparare le basi senza essere sopraffatto.
 
 Se sei uno sviluppatore senior, Laravel ti offre strumenti affidabili per [iniezione delle dipendenze](/docs/{{version}}/container), [unit testing](/docs/{{version}}/testing), [queues](/docs/{{version}}/queues), [real-time events](/docs/{{version}}/broadcasting) e altro ancora. Laravel è ottimizzato per la creazione di applicazioni Web professionali e pronto per gestire carichi di lavoro aziendali.
 
