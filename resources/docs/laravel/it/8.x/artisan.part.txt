@@ -1,0 +1,649 @@
+# Console Artisan 
+
+- Introduzione](#introduzione)
+    - [Tinker (REPL)](#tinker)
+- [Comandi di scrittura](#scrittura-comandi)
+    - [Generazione di comandi](#generazione-comandi)
+    - Struttura dei comandi](#struttura-comando)
+    - [Comandi di chiusura](#chiusura-comandi)
+- [Definizione delle aspettative di ingresso](#defining-input-expectations)
+    - Argomenti](#argomenti)
+    - Opzioni](#opzioni)
+    - [Array di input](#input-arrays)
+    - Descrizioni degli ingressi](#input-descriptions)
+- [Comando I/O](#command-io)
+    - Recupero dell'input](#retrieving-input)
+    - [Prompting for Input](#prompting-for-input)
+    - Scrittura dell'output](#writing-output)
+- Registrare comandi](#registrare-comandi)
+- [Esecuzione programmatica di comandi] (#programmatically-executing-commands)
+    - [Chiamare comandi da altri comandi](#call-commands-from-other-commands)
+- [Gestione dei segnali](#signal-handling)
+- [Personalizzazione dello stub](#stub-customization)
+- Eventi](#events)
+
+<a name="introduzione"></a>
+## Introduzione
+
+Artisan è l'interfaccia a riga di comando inclusa in Laravel. Artisan esiste nella root della tua applicazione come script `artisan` e fornisce una serie di utili comandi che possono aiutarti mentre costruisci la tua applicazione. Per visualizzare un elenco di tutti i comandi Artisan disponibili, puoi usare il comando `list`:
+
+    php artisan elenco
+
+Ogni comando include anche una schermata di "aiuto" che visualizza e descrive gli argomenti e le opzioni disponibili del comando. Per visualizzare una schermata di aiuto, precedere il nome del comando con `help`:
+
+    php artisan help migrazione
+
+<a name="laravel-sail"></a>
+#### Laravel Sail
+
+Se stai usando [Laravel Sail](/docs/{{{version}}/sail) come ambiente di sviluppo locale, ricordati di usare la linea di comando `sail` per richiamare i comandi Artisan. Sail eseguirà i tuoi comandi Artisan all'interno dei contenitori Docker della tua applicazione:
+
+    ./sail artisan list
+
+<a name="tinker"></a>
+### Tinker (REPL)
+
+Laravel Tinker è un potente REPL per il framework Laravel, alimentato dal pacchetto [PsySH](https://github.com/bobthecow/psysh).
+
+<a name="installazione"></a>
+#### Installazione
+
+Tutte le applicazioni Laravel includono Tinker per default. Tuttavia, puoi installare Tinker usando Composer se lo hai precedentemente rimosso dalla tua applicazione:
+
+    composer require laravel/tinker
+
+> {tip} Stai cercando un'interfaccia grafica per interagire con la tua applicazione Laravel? Controlla [Tinkerwell](https://tinkerwell.app)!
+
+<a name="usage"></a>
+#### Uso
+
+Tinker ti permette di interagire con la tua intera applicazione Laravel sulla linea di comando, inclusi i tuoi modelli Eloquent, i lavori, gli eventi e altro. Per entrare nell'ambiente Tinker, eseguire il comando Artisan `tinker`:
+
+    php artisan tinker
+
+Puoi pubblicare il file di configurazione di Tinker usando il comando `vendor:publish`:
+
+    php artisan vendor:publish --provider="Laravel\Tinker\TinkerServiceProvider"
+
+> {note} La funzione di aiuto `dispatch` e il metodo `dispatch` della classe `Dispatchable` dipendono dalla garbage collection per mettere il lavoro in coda. Pertanto, quando si usa tinker, si dovrebbe usare `Bus::dispatch` o `Queue::push` per spedire i lavori.
+
+<a name="command-allow-list"></a>
+#### Lista dei comandi consentiti
+
+Tinker utilizza una lista "allow" per determinare quali comandi Artisan possono essere eseguiti nella sua shell. Per impostazione predefinita, è possibile eseguire i comandi `clear-compiled`, `down`, `env`, `inspire`, `migrate`, `optimize` e `up`. Se vuoi permettere altri comandi puoi aggiungerli all'array `commands` nel tuo file di configurazione `tinker.php`:
+
+    'commands' => [
+        // App\Console\Commands\ExampleCommand::class,
+    ],
+
+<a name="classes-that-should-not-be-aliased"></a>
+#### Classi che non dovrebbero avere un alias
+
+Tipicamente, Tinker assegna automaticamente l'alias alle classi quando si interagisce con esse in Tinker. Tuttavia, potresti desiderare di non dare mai l'alias ad alcune classi. Puoi farlo elencando le classi nell'array `dont_alias` del tuo file di configurazione `tinker.php`:
+
+    'dont_alias' => [
+        App\Models\User::class,
+    ],
+
+<a name="writing-commands"></a>
+## Comandi di scrittura
+
+Oltre ai comandi forniti con Artisan, è possibile costruire i propri comandi personalizzati. I comandi sono tipicamente memorizzati nella directory `app/Console/Commands`; tuttavia, si è liberi di scegliere la propria posizione di memorizzazione, purché i comandi possano essere caricati da Composer.
+
+<a name="generating-commands"></a>
+### Generazione di comandi
+
+Per creare un nuovo comando, puoi usare il comando Artisan `make:command`. Questo comando creerà una nuova classe di comando nella directory `app/Console/Commands`. Non preoccupatevi se questa directory non esiste nella vostra applicazione - verrà creata la prima volta che si esegue il comando `make:command` Artisan:
+
+    php artisan make:command SendEmails
+
+<a name="command-structure"></a>
+### Struttura del comando
+
+Dopo aver generato il tuo comando, dovresti definire valori appropriati per le proprietà `signature` e `description` della classe. Queste proprietà saranno usate quando visualizzerai il tuo comando sullo schermo `list`. La proprietà `signature` ti permette anche di definire [le aspettative di input del tuo comando] (#defining-input-expectations). Il metodo `handle` sarà chiamato quando il tuo comando viene eseguito. Puoi mettere la tua logica di comando in questo metodo.
+
+Diamo un'occhiata a un comando di esempio. Si noti che siamo in grado di richiedere qualsiasi dipendenza di cui abbiamo bisogno attraverso il metodo `handle` del comando. Il [contenitore di servizi] di Laravel (/docs/{{{version}}/container) inietterà automaticamente tutte le dipendenze che sono suggerite nella firma di questo metodo:
+
+    <?php
+
+    namespace App\Console\Commands;
+
+    usa App\Models\User;
+    use App\Support\DripEmailer;
+    usa Illuminate\Console\Command;
+
+    classe SendEmails estende il comando
+    {
+        /**
+         * Il nome e la firma del comando della console.
+         *
+         * @var stringa
+         */
+        protected $signature = 'mail:send {user}';
+
+        /**
+         * La descrizione del comando della console.
+         *
+         * @var stringa
+         */
+        protected $description = 'Invia un'email di marketing a un utente';
+
+        /**
+         * Crea una nuova istanza di comando.
+         *
+         * @return void
+         */
+        funzione pubblica __construct()
+        {
+            parent::__construct();
+        }
+
+        /**
+         * Esegue il comando della console.
+         *
+         * @param \App\Support\DripEmailer $drip
+         * @return misto
+         */
+        funzione pubblica handle(DripEmailer $drip)
+        {
+            $drip->send(User::find($this->argument('user'));
+        }
+    }
+
+> {tip} Per un maggiore riutilizzo del codice, è una buona pratica mantenere i comandi della console leggeri e lasciare che siano i servizi dell'applicazione a svolgere i loro compiti. Nell'esempio sopra, si noti che iniettiamo una classe di servizio per fare il "lavoro pesante" di inviare le e-mail.
+
+<a name="closure-commands"></a>
+### Comandi di chiusura
+
+I comandi basati sulle chiusure forniscono un'alternativa alla definizione dei comandi della console come classi. Allo stesso modo in cui le chiusure di rotte sono un'alternativa ai controllori, si pensi alle chiusure di comandi come un'alternativa alle classi di comandi. All'interno del metodo `commands` del tuo file `app/Console/Kernel.php`, Laravel carica il file `routes/console.php`:
+
+    /**
+     * Registra i comandi basati sulle chiusure per l'applicazione.
+     *
+     * @return void
+     */
+    protected function commands()
+    {
+        require base_path('routes/console.php');
+    }
+
+Anche se questo file non definisce le rotte HTTP, definisce i punti di ingresso basati sulla console (rotte) nella vostra applicazione. All'interno di questo file, si possono definire tutti i comandi della console basati sulla chiusura usando il metodo `Artisan::command`. Il metodo `command` accetta due argomenti: la [firma del comando] (#defining-input-expectations) e una chiusura che riceve gli argomenti e le opzioni del comando:
+
+    Artisan::command('mail:send {user}', function ($user) {
+        $this->info("Invio email a: {$user}!");
+    });
+
+La chiusura è legata all'istanza di comando sottostante, quindi si ha pieno accesso a tutti i metodi di aiuto a cui si potrebbe normalmente accedere su una classe di comando completa.
+
+<a name="type-hinting-dependencies"></a>
+#### Dipendenze di type-hinting
+
+Oltre a ricevere i parametri e le opzioni del comando, le chiusure dei comandi possono anche suggerire dipendenze aggiuntive che si desidera siano risolte dal [contenitore di servizi](/docs/{{version}}/container):
+
+    usa App\Models\User;
+    usa App\Support\DripEmailer;
+
+    Artisan::command('mail:send {user}', function (DripEmailer $drip, $user) {
+        $drip->send(User::find($user));
+    });
+
+<a name="closure-command-descriptions"></a>
+#### Descrizione dei comandi di chiusura
+
+Quando si definisce un comando basato sulla chiusura, si può usare il metodo `purpose` per aggiungere una descrizione al comando. Questa descrizione verrà visualizzata quando si eseguono i comandi `php artisan list` o `php artisan help`:
+
+    Artisan::command('mail:send {user}', function ($user) {
+        // ...
+    })->purpose('Invia un'email di marketing ad un utente');
+
+<a name="defining-input-expectations"></a>
+## Definire le aspettative di input
+
+Quando si scrivono comandi da console, è comune raccogliere input dall'utente attraverso argomenti o opzioni. Laravel rende molto comodo definire l'input che ci si aspetta dall'utente usando la proprietà `signature` sui comandi. La proprietà `signature` ti permette di definire il nome, gli argomenti e le opzioni per il comando in un'unica sintassi espressiva e simile a quella delle rotte.
+
+<a name="arguments"></a>
+### Argomenti
+
+Tutti gli argomenti e le opzioni forniti dall'utente sono racchiusi tra parentesi graffe. Nell'esempio seguente, il comando definisce un argomento obbligatorio: `user`:
+
+    /**
+     * Il nome e la firma del comando della console.
+     *
+     * @var stringa
+     */
+    protected $signature = 'mail:send {user}';
+
+Si possono anche rendere gli argomenti opzionali o definire valori predefiniti per gli argomenti:
+
+    // Argomento opzionale...
+    mail:send {user?}
+
+    // Argomento opzionale con valore predefinito...
+    mail:send {user=foo}
+
+<a name="opzioni"></a>
+### Opzioni
+
+Le opzioni, come gli argomenti, sono un'altra forma di input dell'utente. Le opzioni sono precedute da due trattini (`--`) quando sono fornite tramite la linea di comando. Ci sono due tipi di opzioni: quelle che ricevono un valore e quelle che non lo ricevono. Le opzioni che non ricevono un valore servono come un "interruttore" booleano. Vediamo un esempio di questo tipo di opzioni:
+
+    /**
+     * Il nome e la firma del comando della console.
+     *
+     * @var stringa
+     */
+    protected $signature = 'mail:send {user} {--queue}';
+
+In questo esempio, lo switch `--queue` può essere specificato quando si chiama il comando Artisan. Se lo switch `--queue` viene passato, il valore dell'opzione sarà `true`. Altrimenti, il valore sarà `false`:
+
+    php artisan mail:send 1 --queue
+
+<a name="options-with-values"></a>
+#### Opzioni con valori
+
+Successivamente, diamo un'occhiata ad un'opzione che si aspetta un valore. Se l'utente deve specificare un valore per un'opzione, dovresti aggiungere al nome dell'opzione un segno `=`:
+
+    /**
+     * Il nome e la firma del comando della console.
+     *
+     * @var stringa
+     */
+    protected $signature = 'mail:send {user} {--queue=}';
+
+In questo esempio, l'utente può passare un valore per l'opzione in questo modo. Se l'opzione non è specificata quando si invoca il comando, il suo valore sarà `null`:
+
+    php artisan mail:send 1 --queue=default
+
+È possibile assegnare valori di default alle opzioni specificando il valore di default dopo il nome dell'opzione. Se nessun valore di opzione viene passato dall'utente, verrà usato il valore di default:
+
+    mail:send {user} {--queue=default}
+
+<a name="option-shortcuts"></a>
+#### Opzione scorciatoie
+
+Per assegnare una scorciatoia quando si definisce un'opzione, è possibile specificarla prima del nome dell'opzione e usare il carattere `|` come delimitatore per separare la scorciatoia dal nome completo dell'opzione:
+
+    mail:send {user} {--Q|queueue}
+
+<a name="input-arrays"></a>
+### Array di input
+
+Se vuoi definire argomenti o opzioni che si aspettano valori di input multipli, puoi usare il carattere `*`. Per prima cosa, diamo un'occhiata ad un esempio che specifica un tale argomento:
+
+    mail:send {user*}
+
+Quando si chiama questo metodo, gli argomenti `utente` possono essere passati in ordine alla linea di comando. Per esempio, il seguente comando imposterà il valore di `user` in un array con `foo` e `bar` come valori:
+
+    php artisan mail:send foo bar
+
+Questo carattere `*` può essere combinato con una definizione opzionale dell'argomento per consentire zero o più istanze di un argomento:
+
+    mail:send {user?*}
+
+<a name="option-arrays"></a>
+#### Array di opzioni
+
+Quando si definisce un'opzione che si aspetta valori di input multipli, ogni valore di opzione passato al comando dovrebbe essere preceduto dal nome dell'opzione:
+
+    mail:send {user} {--id=*}
+
+    php artisan mail:send --id=1 --id=2
+
+<a name="input-descriptions"></a>
+### Descrizioni di input
+
+Puoi assegnare descrizioni agli argomenti e alle opzioni di input separando il nome dell'argomento dalla descrizione con i due punti. Se hai bisogno di un po' di spazio in più per definire il tuo comando, sentiti libero di distribuire la definizione su più righe:
+
+    /**
+     * Il nome e la firma del comando della console.
+     *
+     * @var stringa
+     */
+    protected $signature = 'mail:send
+                            {user : L'ID dell'utente}
+                            {--queue= : Se il lavoro deve essere messo in coda}';
+
+<a name="command-io"></a>
+## Comando I/O
+
+<a name="retrieving-input"></a>
+### Recupero dell'input
+
+Mentre il tuo comando è in esecuzione, avrai probabilmente bisogno di accedere ai valori degli argomenti e delle opzioni accettate dal tuo comando. Per farlo, puoi usare i metodi `argomento` e `opzione`. Se un argomento o un'opzione non esiste, verrà restituito `null`:
+
+    /**
+     * Esegue il comando della console.
+     *
+     * @return int
+     */
+    funzione pubblica handle()
+    {
+        $userId = $this->argomento('utente');
+
+        //
+    }
+
+Se si ha bisogno di recuperare tutti i parametri come un `array`, chiamare il metodo `arguments`:
+
+    $argomenti = $this->argomenti();
+
+Le opzioni possono essere recuperate altrettanto facilmente come parametri, usando il metodo `option`. Per recuperare tutte le opzioni come array, chiamare il metodo `options`:
+
+    // Recupera un'opzione specifica...
+    $queueName = $this->option('queue');
+
+    // Recupera tutte le opzioni come array...
+    $options = $this->options();
+
+<a name="prompting-for-input"></a>
+### Richiesta di input
+
+Oltre a visualizzare l'output, si può anche chiedere all'utente di fornire un input durante l'esecuzione del comando. Il metodo `ask` chiederà all'utente la domanda data, accetterà il suo input e poi restituirà l'input dell'utente al tuo comando:
+
+    /**
+     * Esegui il comando della console.
+     *
+     * @return misto
+     */
+    funzione pubblica handle()
+    {
+        $name = $this->ask('Come ti chiami?');
+    }
+
+Il metodo `secret` è simile a `ask`, ma l'input dell'utente non sarà visibile mentre digita nella console. Questo metodo è utile quando si chiedono informazioni sensibili, come le password:
+
+    $password = $this->secret('Qual è la password?');
+
+<a name="chiedere-per-conferma"></a>
+#### Chiedere la conferma
+
+Se è necessario chiedere all'utente una semplice conferma "sì o no", si può usare il metodo `confirm`. Per impostazione predefinita, questo metodo restituisce `false`. Tuttavia, se l'utente inserisce `y` o `yes` in risposta al prompt, il metodo restituirà `true`.
+
+    if ($this->confirm('Vuoi continuare?')) {
+        //
+    }
+
+Se necessario, si può specificare che la richiesta di conferma dovrebbe restituire `true` in modo predefinito, passando `true` come secondo parametro al metodo `confirm`:
+
+    if ($this->confirm('Vuoi continuare?', true)) {
+        //
+    }
+
+<a name="auto-completamento"></a>
+#### Completamento automatico
+
+Il metodo `anticipate` può essere usato per fornire il completamento automatico per le scelte possibili. L'utente può comunque fornire qualsiasi risposta, indipendentemente dai suggerimenti di completamento automatico:
+
+    $name = $this->anticipate('Come ti chiami?', ['Taylor', 'Dayle']);
+
+In alternativa, si può passare una chiusura come secondo parametro al metodo `anticipate`. La chiusura sarà chiamata ogni volta che l'utente digita un carattere di input. La chiusura dovrebbe accettare un parametro stringa contenente l'input dell'utente fino a quel momento e restituire un array di opzioni per il completamento automatico:
+
+    $name = $this->anticipate('Qual è il tuo indirizzo?', function ($input) {
+        // Restituisce le opzioni di completamento automatico...
+    });
+
+<a name="domande a scelta multipla"></a>
+#### Domande a scelta multipla
+
+Se è necessario dare all'utente un insieme predefinito di scelte quando si fa una domanda, si può usare il metodo `choice`. Si può impostare l'indice dell'array del valore predefinito da restituire se non viene scelta alcuna opzione, passando l'indice come terzo parametro del metodo:
+
+    $nome = $this->choice(
+        'Come ti chiami?
+        ['Taylor', 'Dayle'],
+        $defaultIndex
+    );
+
+Inoltre, il metodo `choice` accetta un quarto e un quinto parametro opzionali per determinare il numero massimo di tentativi di selezionare una risposta valida e se sono consentite selezioni multiple:
+
+    $name = $this->choice(
+        'Come ti chiami?
+        ['Taylor', 'Dayle'],
+        $defaultIndex,
+        $maxAttempts = null,
+        $allowMultipleSelections = false
+    );
+
+<a name="writing-output"></a>
+### Scrittura dell'output
+
+Per inviare output alla console, si possono usare i metodi `line`, `info`, `comment`, `question` e `error`. Ognuno di questi metodi userà i colori ANSI appropriati per il loro scopo. Per esempio, mostriamo alcune informazioni generali all'utente. Tipicamente, il metodo `info` visualizzerà nella console un testo di colore verde:
+
+    /**
+     * Esegui il comando della console.
+     *
+     * @return misto
+     */
+    funzione pubblica handle()
+    {
+        // ...
+
+        $this->info('Il comando ha avuto successo!');
+    }
+
+Per mostrare un messaggio di errore, usare il metodo `error`. Il testo del messaggio di errore è tipicamente mostrato in rosso:
+
+    $this->error('Qualcosa è andato storto!');
+
+Si può usare il metodo `line` per visualizzare del testo semplice e non colorato:
+
+    $this->line('Visualizza questo sullo schermo');
+
+Si può usare il metodo `newLine` per visualizzare una riga vuota:
+
+    // Scrivere una singola riga vuota...
+    $this->newLine();
+
+    // Scrivere tre righe vuote...
+    $this->newLine(3);
+
+<a name="tabelle"></a>
+#### Tabelle
+
+Il metodo `table` rende facile formattare correttamente più righe / colonne di dati. Tutto quello che devi fare è fornire i nomi delle colonne e i dati per la tabella e Laravel
+calcolerà automaticamente la larghezza e l'altezza appropriate della tabella per te:
+
+    usa App\Models\User;
+
+    $this->table(
+        ['Nome', 'Email'],
+        User::all(['nome', 'email'])->toArray()
+    );
+
+<a name="progress-bars"></a>
+#### Barre di progresso
+
+Per compiti di lunga durata, può essere utile mostrare una barra di avanzamento che informi gli utenti su quanto sia completo il compito. Usando il metodo `withProgressBar`, Laravel mostrerà una barra di avanzamento e avanzerà il suo progresso per ogni iterazione su un dato valore iterabile:
+
+    usa App\Models\User;
+
+    $users = $this->withProgressBar(User::all(), function ($user) {
+        $this->performTask($user);
+    });
+
+A volte, si potrebbe aver bisogno di un controllo più manuale su come una barra di progresso viene fatta avanzare. Per prima cosa, definire il numero totale di passi che il processo itererà. Poi, si fa avanzare la barra di avanzamento dopo l'elaborazione di ogni elemento:
+
+$users = App\Models\User::all();
+
+    $bar = $this->output->creareProgressBar(count($users));
+
+    $bar->start();
+
+    foreach ($utenti come $utente) {
+        $this->performTask($utente);
+
+        $bar->avanza();
+    }
+
+    $bar->finish();
+
+> {tip} Per opzioni più avanzate, controllare la [documentazione del componente Symfony Progress Bar](https://symfony.com/doc/current/components/console/helpers/progressbar.html).
+
+<a name="registering-commands"></a>
+## Registrare i comandi
+
+Tutti i comandi della console sono registrati nella classe `App\Console\Kernel` dell'applicazione, che è il "kernel della console" dell'applicazione. All'interno del metodo `commands` di questa classe, vedrai una chiamata al metodo `load` del kernel. Il metodo `load` scansionerà la directory `app/Console/Commands` e registrerà automaticamente ogni comando che contiene con Artisan. Sei anche libero di fare ulteriori chiamate al metodo `load` per scansionare altre directory per i comandi Artisan:
+
+    /**
+     * Registra i comandi per l'applicazione.
+     *
+     * @return void
+     */
+    protected function commands()
+    {
+        $this->load(__DIR__.'/Comandi');
+        $this->load(__DIR__.'/../Dominio/Ordini/Comandi');
+
+        // ...
+    }
+
+Se necessario, è possibile registrare manualmente i comandi aggiungendo il nome della classe del comando alla proprietà `$commands` della classe `App\Console\Kernel`. Quando Artisan si avvia, tutti i comandi elencati in questa proprietà saranno risolti dal [service container](/docs/{{version}}/container) e registrati con Artisan:
+
+    protected $comandi = [
+        ComandiInviaEmail::class
+    ];
+
+<a name="programmatically-executing-commands"></a>
+## Esecuzione programmatica dei comandi
+
+A volte si può desiderare di eseguire un comando Artisan al di fuori della CLI. Per esempio, si potrebbe voler eseguire un comando Artisan da una rotta o da un controller. Si può usare il metodo `call` sulla facciata `Artisan` per realizzare questo. Il metodo `call` accetta il nome della firma del comando o il nome della classe come primo argomento, e un array di parametri di comando come secondo argomento. Verrà restituito il codice di uscita:
+
+    usa Illuminate\Support\Facades\Artisan;
+
+    Route::post('/user/{user}/mail', function ($user) {
+        $exitCode = Artisan::call('mail:send', [
+            'user' => $user, '--queue' => 'default'
+        ]);
+
+        //
+    });
+
+In alternativa, si può passare l'intero comando Artisan al metodo `call` come una stringa:
+
+    Artisan::call('mail:send 1 --queue=default');
+
+<a name="passare valori di matrice"></a>
+#### Passaggio di valori di matrice
+
+Se il vostro comando definisce un'opzione che accetta un array, potete passare un array di valori a tale opzione:
+
+    usa Illuminate\Support\Facades\Artisan;
+
+    Route::post('/mail', function () {
+        $exitCode = Artisan::call('mail:send', [
+            '--id' => [5, 13]
+        ]);
+    });
+
+<a name="passare valori booleani"></a>
+#### Passare valori booleani
+
+Se hai bisogno di specificare il valore di un'opzione che non accetta valori stringa, come il flag `--force` del comando `migrate:refresh`, dovresti passare `true` o `false` come valore dell'opzione:
+
+    $exitCode = Artisan::call('migrate:refresh', [
+        '--force' => true,
+    ]);
+
+<a name="queueing-artisan-commands"></a>
+#### Mettere in coda i comandi Artisan
+
+Usando il metodo `queue` sulla facciata `Artisan`, puoi anche mettere in coda i comandi Artisan in modo che vengano processati in background dai tuoi [queue workers] (/docs/{{version}}/queues). Prima di usare questo metodo, assicurati di aver configurato la tua coda e di avere un ascoltatore di code:
+
+    usa Illuminate\Support\Facades\Artisan;
+
+    Route::post('/user/{user}/mail', function ($user) {
+        Artisan::queue('mail:send', [
+            'user' => $user, '--queue' => 'default'
+        ]);
+
+        //
+    });
+
+Usando i metodi `onConnection` e `onQueue`, è possibile specificare la connessione o la coda a cui il comando Artisan deve essere inviato:
+
+    Artisan::queue('mail:send', [
+        'user' => 1, '--queue' => 'default'
+    ])->onConnection('redis')->onQueue('commands');
+
+<a name="call-commands-from-other-commands"></a>
+### Chiamare comandi da altri comandi
+
+A volte si può desiderare di chiamare altri comandi da un comando Artisan esistente. È possibile farlo utilizzando il metodo `call`. Questo metodo `call` accetta il nome del comando e un array di argomenti / opzioni del comando:
+
+    /**
+     * Esegui il comando della console.
+     *
+     * @return misto
+     */
+    funzione pubblica handle()
+    {
+        $this->call('mail:send', [
+            'user' => 1, '--queue' => 'default'
+        ]);
+
+        //
+    }
+
+Se si vuole chiamare un altro comando della console e sopprimere tutto il suo output, si può usare il metodo `callSilently`. Il metodo `callSilently` ha la stessa firma del metodo `call`:
+
+    $this->callSilently('mail:send', [
+        'user' => 1, '--queue' => 'default'
+    ]);
+
+<a name="signal-handling"></a>
+## Gestione dei segnali
+
+Il componente Console di Symfony, che alimenta la console di Artisan, consente di indicare quali segnali di processo (se presenti) il comando gestisce. Per esempio, si può indicare che il proprio comando gestisce i segnali `SIGINT` e `SIGTERM`.
+
+Per iniziare, dovresti implementare l'interfaccia `Symfony\Component\Console\Command\SignalableCommandInterface` nella tua classe di comando Artisan. Questa interfaccia richiede la definizione di due metodi: `getSubscribedSignals` e `handleSignal`:
+
+``php
+<?php
+
+usa Symfony\Component\Console\Command\SignalableCommandInterface;
+
+classe StartServer estende Command che implementa SignalableCommandInterface
+{
+    // ...
+
+    /**
+     * Ottiene la lista dei segnali gestiti dal comando.
+     *
+     * @return array
+     */
+    funzione pubblica getSubscribedSignals(): array
+    {
+        return [SIGINT, SIGTERM];
+    }
+
+    /**
+     * Gestisce un segnale in arrivo.
+     *
+     * @param int $signal
+     * @return void
+     */
+    funzione pubblica handleSignal(int $signal): void
+    {
+        se ($signal === SIGINT) {
+            $this->stopServer();
+
+            return;
+        }
+    }
+}
+```
+
+Come ci si potrebbe aspettare, il metodo `getSubscribedSignals` dovrebbe restituire un array dei segnali che il comando può gestire, mentre il metodo `handleSignal` riceve il segnale e può rispondere di conseguenza.
+
+<a name="stub-customization"></a>
+## Personalizzazione dello stub
+
+I comandi `make` della console Artisan sono usati per creare una varietà di classi, come controller, lavori, migrazioni e test. Queste classi sono generate utilizzando file "stub" che sono popolati con valori basati sull'input dell'utente. Tuttavia, si potrebbe voler fare piccole modifiche ai file generati da Artisan. Per fare questo, è possibile utilizzare il comando `stub:publish` per pubblicare gli stub più comuni nella propria applicazione in modo da poterli personalizzare:
+
+    php artisan stub:publish
+
+Gli stub pubblicati si troveranno all'interno di una directory `stubs` nella root dell'applicazione. Qualsiasi modifica apportata a questi stub si rifletterà quando si genereranno le classi corrispondenti usando i comandi Artisan `make`.
+
+<a name="events"></a>
+## Eventi
+
+Artisan invia tre eventi quando esegue i comandi: `IlluminateConsole\Events\ArtisanStarting`, `IlluminateConsole\Events\CommandStarting`, e `IlluminateConsole\Events\CommandFinished`. L'evento `ArtisanStarting` è distribuito immediatamente quando Artisan inizia a funzionare. Successivamente, l'evento `CommandStarting` viene inviato immediatamente prima dell'esecuzione di un comando. Infine, l'evento `CommandFinished` viene inviato una volta che un comando termina l'esecuzione.
+
