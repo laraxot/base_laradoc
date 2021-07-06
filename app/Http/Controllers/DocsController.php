@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Documentation;
@@ -24,7 +26,7 @@ class DocsController extends Controller {
         $this->docs = $docs;
     }
 
-    public function setLang(string $lang) {
+    public function setLang(string $lang): void {
         app()->setLocale($lang);
         $this->lang = $lang;
         $this->docs->setLang($lang);
@@ -101,7 +103,7 @@ class DocsController extends Controller {
         $canonical = null;
 
         if ($this->docs->sectionExists(DEFAULT_VERSION, $sectionPage)) {
-            $canonical = 'docs/'.DEFAULT_VERSION.'/'.$sectionPage;
+            $canonical = '/'.$lang.'/docs/'.DEFAULT_VERSION.'/'.$sectionPage;
         }
 
         return view('docs', [
